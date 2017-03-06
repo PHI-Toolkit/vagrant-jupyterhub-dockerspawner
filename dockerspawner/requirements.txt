@@ -1,0 +1,3 @@
+jupyterhub>=0.4
+escapism
+docker-py

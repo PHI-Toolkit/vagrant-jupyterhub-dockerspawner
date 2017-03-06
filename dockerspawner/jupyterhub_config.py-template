@@ -1,0 +1,51 @@
+# Configuration file for Jupyter Hub
+
+c = get_config()
+
+# spawn with Docker
+#c.Spawner.mem_limit = '2G'
+c.JupyterHub.spawner_class = 'dockerspawner.DockerSpawner'
+
+# The docker instances need access to the Hub, so the default loopback port doesn't work:
+from jupyter_client.localinterfaces import public_ips
+c.JupyterHub.hub_ip = public_ips()[0]
+c.JupyterHub.proxy_api_ip = public_ips()[0]
+c.Spawner.ip =  public_ips()[0]
+c.Spawner.default_url = '/user/username/lab'
+
+# OAuth with GitHub
+c.JupyterHub.authenticator_class = 'oauthenticator.GitHubOAuthenticator'
+
+import os
+
+join = os.path.join
+here = os.path.dirname(__file__)
+whitelist = set()
+admin = set()
+with open(join(here, 'userlist')) as f:
+    for line in f:
+        if not line:
+            continue
+        parts = line.split()
+        name = parts[0]
+        whitelist.add(name)
+        if len(parts) > 1 and parts[1] == 'admin':
+            admin.add(name)
+
+c.Authenticator.whitelist = whitelist
+c.Authenticator.admin_users = admin
+
+c.GitHubOAuthenticator.oauth_callback_url = os.environ['OAUTH_CALLBACK_URL']
+
+# ssl config
+ssl = join(here, 'ssl')
+keyfile = join(ssl, 'file.io.key')
+certfile = join(ssl, 'file.crt')
+
+if os.path.exists(keyfile):
+    c.JupyterHub.ssl_key = "/vagrant/path/to/file.key"
+if os.path.exists(certfile):
+    c.JupyterHub.ssl_cert = "/vagrant/path/to/file.crt"
+
+#c.JupyterHub.proxy_auth_token = open(join(here,'etc/proxy_token'),'r').read().replace('\n','')
+#os.environ['CONFIGPROXY_AUTH_TOKEN'] = c.JupyterHub.proxy_auth_token
